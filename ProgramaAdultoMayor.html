@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prácticas de Teclado y Ratón V2.5</title>
+    <style>
+        :root { --color-fondo: #fdfaf4; --color-texto: #4a4a4a; --color-primario: #4a90e2; --color-primario-hover: #357abd; --color-acento: #f5a623; --color-exito: #50c878; --color-blanco: #ffffff; --fuente-principal: 'Helvetica Neue', Arial, sans-serif; --tamano-fuente-titulo: 2.8rem; --tamano-fuente-instruccion: 1.6rem; --tamano-fuente-boton: 1.4rem; }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; font-family: var(--fuente-principal); background-color: var(--color-fondo); color: var(--color-texto); overflow: hidden; }
+        body { display: flex; align-items: center; justify-content: center; text-align: center; }
+        #app-container { width: 95%; max-width: 1000px; height: 95vh; background-color: var(--color-blanco); border-radius: 25px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding: 2rem; position: relative; transition: all 0.5s ease; }
+        h1 { font-size: var(--tamano-fuente-titulo); color: var(--color-primario); margin: 0 0 1rem 0; font-weight: 600; }
+        p { font-size: var(--tamano-fuente-instruccion); line-height: 1.6; max-width: 90%; margin: 1rem auto; }
+        .btn { font-size: var(--tamano-fuente-boton); padding: 15px 30px; border-radius: 50px; border: none; cursor: pointer; background-color: var(--color-primario); color: var(--color-blanco); transition: all 0.3s ease; margin: 5px; font-weight: 500; box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3); }
+        .btn:hover { background-color: var(--color-primario-hover); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(74, 144, 226, 0.4); }
+        .btn-menu { width: 80%; max-width: 450px; text-align: left; padding-left: 30px; margin-bottom: 15px; }
+        .input-text { font-size: 2.5rem; padding: 15px; width: 80%; max-width: 400px; text-align: center; border: 3px solid #dcdcdc; border-radius: 15px; text-transform: uppercase; transition: border-color 0.3s ease; }
+        .input-text:focus { outline: none; border-color: var(--color-primario); }
+        .nav-button { position: fixed; width: 65px; height: 65px; border-radius: 50%; font-size: 2.5rem; border: none; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.15); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        #voice-toggle { bottom: 20px; right: 20px; background-color: var(--color-acento); color: var(--color-blanco); }
+        #voice-toggle.active { background-color: var(--color-exito); }
+        #home-button { bottom: 20px; left: 20px; background-color: #777; color: var(--color-blanco); display: none; }
+        #exercise-content { width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; }
+        #exercise-content.disabled { pointer-events: none; opacity: 0.5; }
+        #reveal-grid { width: 400px; height: 300px; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(8, 1fr); border: 2px solid #ccc; background-image: url('imagenes/imagenrevelar.jpg'); background-size: contain; background-position: center; background-repeat: no-repeat; }
+        .grid-cell { background-color: var(--color-primario); transition: background-color 0.5s ease; }
+        .grid-cell.hidden { background-color: transparent; }
+        #path-container { position: relative; width: 350px; height: 350px; border: 3px dashed #ccc; border-radius: 50%; }
+        .path-point { position: absolute; width: 50px; height: 50px; background-color: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: var(--color-blanco); border: 4px solid var(--color-blanco); box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .path-point.active { background-color: var(--color-acento); transform: scale(1.1); }
+        .path-point.done { background-color: var(--color-exito); transform: scale(1); }
+        .completion-banner { width: 100%; padding: 1rem; background-color: #f0fff4; border: 2px solid var(--color-exito); border-radius: 20px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 20px; }
+        .completion-banner h1 { font-size: 2rem; color: var(--color-exito); margin: 0; }
+        .completion-banner .btn { background-color: var(--color-exito); box-shadow: 0 4px 15px rgba(80, 200, 120, 0.3); }
+        .completion-banner .btn:hover { background-color: #36a457; }
+        .checkmark { width: 60px; height: 60px; display: block; stroke-width: 4; stroke: var(--color-exito); stroke-miterlimit: 10; animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+        .checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards; }
+        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
+        @media (max-width: 768px) { :root { --tamano-fuente-titulo: 2.2rem; --tamano-fuente-instruccion: 1.3rem; --tamano-fuente-boton: 1.1rem; } #app-container { padding: 1rem; } #reveal-grid { width: 300px; height: 225px; } #path-container { width: 300px; height: 300px; } .path-point { width: 40px; height: 40px; font-size: 1.2rem; } .completion-banner { flex-direction: column; gap: 10px; } .completion-banner h1 { font-size: 1.5rem; } }
+    </style>
+</head>
+<body>
+
+    <div id="app-container"></div>
+    
+    <button id="voice-toggle" class="nav-button" title="Activar narración">🔇</button>
+
+<script>
+/**********************************************************************
+*              ARQUITECTURA MVC (Modelo-Vista-Controlador) V2.5       *
+***********************************************************************/
+
+const model = {
+    exercises: [
+        { id: 0, title: "¡Bienvenido!", instruction: "¡Hola! Te damos la bienvenida a estas prácticas. Para empezar, mueve el ratón hasta el botón azul que dice '¡Clic aquí!' y haz clic en él.", type: "click" },
+        { id: 1, title: "2. La Letra Perdida", instruction: "Haz clic en el cuadro, escribe la letra '{LETTER}' y presiona Enter.", type: "type-letter" },
+        { id: 2, title: "3. Palabra Secreta", instruction: "Haz clic en el cuadro, escribe la palabra '{WORD}' y presiona Enter.", type: "type-word" },
+        { id: 3, title: "4. Revela la Imagen", instruction: "Mueve el ratón sobre el cuadro azul como si limpiaras una ventana, ¡hasta que aparezca un dibujo!", type: "reveal" },
+        { id: 4, title: "5. Arrastra la Fruta", instruction: "Para arrastrar la manzana, primero mueve el ratón sobre ella. Luego, mantén presionado el botón del ratón y, sin soltarlo, mueve la manzana hasta la canasta. Cuando la manzana esté sobre la canasta, suelta el botón del ratón.", type: "drag-drop" },
+        { id: 5, title: "6. Sigue el Camino", instruction: "Con el ratón, visita los puntos en orden: 1, 2, 3 y 4.", type: "path-follow" },
+        { id: 6, title: "7. Usando la Ruedita", instruction: "Este ejercicio es para usar la ruedita del ratón. Gira la ruedita hacia abajo para desplazarte. Sigue bajando hasta que veas aparecer un botón azul y luego haz clic en él.", type: "scroll" },
+        { id: 7, title: "8. Lista de la Compra", instruction: "Para arrastrar los productos, mueve el ratón sobre uno de ellos. Mantén presionado el botón y, sin soltarlo, muévelo hasta la canasta. Suelta el botón y repite con el otro producto. Finalmente, escribe 'LISTO' y presiona Enter.", type: "shopping-list" }
+    ],
+    letterPool: ['A', 'S', 'D', 'F', 'J', 'K', 'L', 'P', 'M'],
+    wordPool: ['CASA', 'SOL', 'MESA', 'PATO', 'GATO', 'LUNA'],
+    currentExerciseId: null,
+    isVoiceEnabled: true,
+};
+
+const view = {
+    app: document.getElementById('app-container'),
+
+    renderExercise(exercise, dynamicInstruction) {
+        let exerciseHTML = `<h1>${exercise.title}</h1><p>${dynamicInstruction || exercise.instruction}</p>`;
+        switch (exercise.type) {
+            case 'click': exerciseHTML += `<button id="exercise-btn" class="btn">¡Clic aquí!</button>`; break;
+            case 'type-letter':
+            case 'type-word': exerciseHTML += `<input type="text" id="exercise-input" class="input-text" maxlength="5">`; break;
+            case 'reveal': exerciseHTML += `<div id="reveal-grid"></div>`; break;
+            case 'drag-drop': exerciseHTML += `<div style="display:flex; justify-content:space-around; align-items:center; width:100%; margin-top:2rem;"><div id="drag-item" draggable="true" style="cursor:grab;"><img src="imagenes/manzana.png" alt="Manzana" width="80"></div><div id="drop-zone" style="min-height: 120px;"><img src="imagenes/canasta.png" alt="Canasta" width="100"></div></div>`; break;
+            case 'path-follow': exerciseHTML += `<div id="path-container"></div>`; break;
+            case 'scroll':
+                exerciseHTML = `
+                    <div id="scroll-container" style="width: 100%; height: 60vh; overflow-y: auto; border: 2px dashed #ccc; padding: 1rem; text-align: left;">
+                        <h1>${exercise.title}</h1>
+                        <p>${exercise.instruction}</p>
+                        <br><br><br><br><br><br>
+                        <p style="text-align: center;">¡Sigue bajando!</p>
+                        <br><br><br><br><br><br>
+                        <p style="text-align: center;">Un poco más...</p>
+                        <br><br><br><br><br><br>
+                        <div style="text-align: center;">
+                            <button id="scroll-btn" class="btn">¡Lo encontré!</button>
+                        </div>
+                    </div>`;
+                break;
+            case 'shopping-list': exerciseHTML += `<div style="display:flex; justify-content:space-around; align-items:center; width:100%; margin-top:1rem;"><div style="display:flex; flex-direction:column; gap: 20px;"><div id="drag-bread" draggable="true" style="cursor:grab;"><img src="imagenes/pan.png" alt="Pan" width="80"></div><div id="drag-milk" draggable="true" style="cursor:grab;"><img src="imagenes/leche.png" alt="Leche" width="80"></div></div><div id="drop-zone" style="min-height: 120px; border: 3px dashed #ccc; border-radius:20px; padding: 20px; display: flex; align-items: center; gap: 10px;"><img src="imagenes/canasta.png" alt="Canasta" width="100"></div></div><div id="shopping-input-container" style="visibility:hidden; margin-top:1rem;"><input type="text" id="exercise-input" class="input-text" placeholder="Escribe LISTO"></div>`; break;
+        }
+        this.app.innerHTML = `<div id="exercise-content">${exerciseHTML}</div>`;
+    },
+
+    renderCompletionBanner({ isLast, onRestart, onNext }) {
+        const banner = document.createElement('div');
+        banner.className = 'completion-banner';
+        let buttonsHTML = '';
+        let messageHTML = '';
+
+        if (isLast) {
+            messageHTML = '<h1>¡Felicidades!</h1><p>Has completado todas las prácticas.</p>';
+            buttonsHTML = `<button id="restart-btn" class="btn">Empezar de Nuevo</button>`;
+        } else {
+            messageHTML = '<h1>¡Muy bien!</h1>';
+            buttonsHTML = `<button id="restart-btn" class="btn">Repetir</button><button id="next-btn" class="btn">Siguiente</button>`;
+        }
+
+        banner.innerHTML = `
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
+            ${messageHTML}
+            <div>${buttonsHTML}</div>`;
+
+        this.app.prepend(banner);
+        const exerciseContent = document.getElementById('exercise-content');
+        if(exerciseContent) exerciseContent.classList.add('disabled');
+
+        document.getElementById('restart-btn').onclick = onRestart;
+        if (!isLast) {
+            document.getElementById('next-btn').onclick = onNext;
+        }
+    },
+
+    renderInputError(message) {
+        this.clearInputError();
+        const inputElement = document.getElementById('exercise-input');
+        if (inputElement) {
+            const errorElement = document.createElement('p');
+            errorElement.id = 'error-message';
+            errorElement.textContent = message;
+            errorElement.style.color = '#d9534f';
+            errorElement.style.fontWeight = 'bold';
+            errorElement.style.marginTop = '10px';
+            inputElement.parentNode.insertBefore(errorElement, inputElement.nextSibling);
+        }
+    },
+
+    clearInputError() {
+        const errorElement = document.getElementById('error-message');
+        if (errorElement) errorElement.remove();
+    },
+    
+    clearCompletionState() {
+        this.clearInputError();
+        const banner = this.app.querySelector('.completion-banner');
+        if (banner) banner.remove();
+        const exerciseContent = document.getElementById('exercise-content');
+        if(exerciseContent) exerciseContent.classList.remove('disabled');
+    },
+
+    updateVoiceButton(isEnabled) {
+        const btn = document.getElementById('voice-toggle');
+        btn.textContent = isEnabled ? '🔊' : '🔇';
+        btn.title = isEnabled ? 'Desactivar narración' : 'Activar narración';
+        isEnabled ? btn.classList.add('active') : btn.classList.remove('active');
+    }
+};
+
+const controller = {
+    spanishVoice: null,
+
+    init() {
+        window.speechSynthesis.onvoiceschanged = () => this.getSpanishVoice();
+        document.getElementById('voice-toggle').addEventListener('click', () => this.toggleVoice());
+        view.updateVoiceButton(model.isVoiceEnabled);
+        this.startExercise(0);
+    },
+
+    startExercise(id) {
+        view.clearCompletionState();
+        model.currentExerciseId = id;
+        const exercise = model.exercises.find(e => e.id === id);
+        let dynamicInstruction = exercise.instruction, dataToValidate = null;
+        if (exercise.type === 'type-letter') {
+            dataToValidate = model.letterPool[Math.floor(Math.random() * model.letterPool.length)];
+            dynamicInstruction = exercise.instruction.replace('{LETTER}', dataToValidate);
+        } else if (exercise.type === 'type-word') {
+            dataToValidate = model.wordPool[Math.floor(Math.random() * model.wordPool.length)];
+            dynamicInstruction = exercise.instruction.replace('{WORD}', dataToValidate);
+        }
+        view.renderExercise(exercise, dynamicInstruction);
+        this.speak(dynamicInstruction);
+        this.setupExerciseLogic(exercise, dataToValidate);
+    },
+
+    completeExercise() {
+        const exercise = model.exercises.find(e => e.id === model.currentExerciseId);
+        const isLast = model.currentExerciseId >= model.exercises.length - 1;
+        
+        const message = isLast
+            ? '¡Felicidades! Has completado todas las prácticas. Mueve el ratón hacia el botón de arriba para Empezar de Nuevo.'
+            : '¡Muy bien! Ahora, mueve el ratón hacia los botones de arriba para Repetir o ir al Siguiente ejercicio.';
+        this.speak(message);
+
+        view.renderCompletionBanner({
+            isLast: isLast,
+            onRestart: () => this.startExercise(isLast ? 0 : exercise.id),
+            onNext: () => this.startExercise(exercise.id + 1)
+        });
+    },
+
+    setupExerciseLogic(exercise, dataToValidate) {
+        switch (exercise.type) {
+            case 'click':
+                document.getElementById('exercise-btn').onclick = () => this.completeExercise();
+                break;
+            case 'type-letter':
+            case 'type-word':
+                const input = document.getElementById('exercise-input');
+                input.focus();
+                input.oninput = () => view.clearInputError();
+                input.onkeyup = (event) => {
+                    if (event.key === 'Enter') {
+                        if (input.value.toUpperCase() === dataToValidate) {
+                            this.completeExercise();
+                        } else {
+                            this.speak('Eso no es correcto. Inténtalo de nuevo.');
+                            view.renderInputError('¡Incorrecto! Vuelve a intentarlo.');
+                            input.value = '';
+                        }
+                    }
+                };
+                break;
+            case 'reveal': this.setupRevealLogic(); break;
+            case 'drag-drop': this.setupDragDropLogic(); break;
+            case 'path-follow': this.setupPathFollowLogic(); break;
+            case 'scroll':
+                document.getElementById('scroll-btn').onclick = () => this.completeExercise();
+                break;
+            case 'shopping-list': this.setupShoppingListLogic(); break;
+        }
+    },
+
+    setupRevealLogic() {
+        const grid = document.getElementById('reveal-grid');
+        const numCols = 10, numRows = 8, totalCells = numCols * numRows;
+        let revealedCount = 0, cells = [];
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            grid.appendChild(cell);
+            cells.push(cell);
+            cell.onmouseover = () => {
+                const brushSize = 1, cellIndex = cells.indexOf(cell), row = Math.floor(cellIndex / numCols), col = cellIndex % numCols;
+                for (let r = -brushSize; r <= brushSize; r++) {
+                    for (let c = -brushSize; c <= brushSize; c++) {
+                        let current_r = row + r, current_c = col + c;
+                        if (current_r >= 0 && current_r < numRows && current_c >= 0 && current_c < numCols) {
+                            let neighborIndex = current_r * numCols + current_c, neighborCell = cells[neighborIndex];
+                            if (neighborCell && !neighborCell.classList.contains('hidden')) { neighborCell.classList.add('hidden'); revealedCount++; }
+                        }
+                    }
+                }
+                if (revealedCount / totalCells > 0.9) { grid.style.pointerEvents = 'none'; this.completeExercise(); }
+            };
+        }
+    },
+
+    setupPathFollowLogic() {
+        const container = document.getElementById('path-container');
+        const points = [{ top: '5%', left: '42%' }, { top: '42%', left: '85%' }, { top: '80%', left: '42%' }, { top: '42%', left: '0%' }];
+        let currentPoint = 0;
+        const updatePoints = () => {
+            container.innerHTML = '';
+            points.forEach((pos, i) => {
+                const pointEl = document.createElement('div');
+                pointEl.className = 'path-point';
+                pointEl.textContent = i + 1;
+                pointEl.style.top = pos.top; pointEl.style.left = pos.left;
+                if (i < currentPoint) pointEl.classList.add('done');
+                if (i === currentPoint) pointEl.classList.add('active');
+                pointEl.onmouseenter = () => { if (i === currentPoint) { currentPoint++; if (currentPoint === points.length) { this.completeExercise(); } else { updatePoints(); } } };
+                container.appendChild(pointEl);
+            });
+        };
+        updatePoints();
+    },
+    
+    setupDragDropLogic() {
+        const item = document.getElementById('drag-item'), dropZone = document.getElementById('drop-zone');
+        item.ondragstart = (e) => { e.dataTransfer.setData('text/id', 'drag-item'); e.target.style.cursor = 'grabbing'; };
+        item.ondragend = (e) => e.target.style.cursor = 'grab';
+        dropZone.ondragover = (e) => e.preventDefault();
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.getData('text/id') === 'drag-item') {
+                item.style.display = 'none';
+                dropZone.innerHTML = '<img src="imagenes/canasta.png" alt="Canasta" width="100"><img src="imagenes/manzana.png" alt="Manzana" width="80">';
+                this.completeExercise();
+            }
+        };
+    },
+
+    setupShoppingListLogic() {
+        const items = {
+            'drag-bread': { dropped: false, imgHTML: '<img src="imagenes/pan.png" alt="Pan" width="60">' },
+            'drag-milk': { dropped: false, imgHTML: '<img src="imagenes/leche.png" alt="Leche" width="60">' }
+        };
+        const dropZone = document.getElementById('drop-zone');
+        Object.keys(items).forEach(id => {
+            const itemEl = document.getElementById(id);
+            if(itemEl) {
+                itemEl.ondragstart = (e) => { e.dataTransfer.setData('text/id', id); e.target.style.cursor = 'grabbing'; };
+                itemEl.ondragend = (e) => e.target.style.cursor = 'grab';
+            }
+        });
+        dropZone.ondragover = (e) => e.preventDefault();
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/id');
+            if (items[id] && !items[id].dropped) {
+                items[id].dropped = true;
+                document.getElementById(id).style.display = 'none';
+                dropZone.innerHTML += items[id].imgHTML;
+                if (Object.values(items).every(item => item.dropped)) {
+                    const inputContainer = document.getElementById('shopping-input-container');
+                    if(inputContainer.style.visibility === 'hidden') {
+                        this.speak("¡Genial! Ahora escribe la palabra LISTO en el cuadro y presiona Enter.");
+                        inputContainer.style.visibility = 'visible';
+                        const input = document.getElementById('exercise-input');
+                        input.focus();
+                        input.oninput = () => view.clearInputError();
+                        input.onkeyup = (event) => {
+                            if (event.key === 'Enter') {
+                                if (input.value.toUpperCase() === 'LISTO') {
+                                    this.completeExercise();
+                                } else {
+                                    this.speak('Eso no es correcto. Inténtalo de nuevo.');
+                                    view.renderInputError('¡Incorrecto! Escribe LISTO y presiona Enter.');
+                                    input.value = '';
+                                }
+                            }
+                        };
+                    }
+                }
+            }
+        };
+    },
+
+    getSpanishVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        this.spanishVoice = voices.find(v => v.name === 'Microsoft Laura - Spanish (Spain)') || voices.find(v => v.lang === 'es-ES' && v.name.includes('Female')) || voices.find(v => v.lang === 'es-MX' && v.name.includes('Female')) || voices.find(v => v.lang.startsWith('es-'));
+    },
+
+    toggleVoice() {
+        model.isVoiceEnabled = !model.isVoiceEnabled;
+        view.updateVoiceButton(model.isVoiceEnabled);
+        if (model.isVoiceEnabled) { if (!this.spanishVoice) this.getSpanishVoice(); this.speak("Voz activada."); } 
+        else { window.speechSynthesis.cancel(); }
+    },
+
+    speak(text) {
+        if (!model.isVoiceEnabled || !text || !('speechSynthesis' in window)) return;
+
+        // If voices aren't ready, wait and try again.
+        if (!this.spanishVoice && window.speechSynthesis.getVoices().length === 0) {
+            setTimeout(() => this.speak(text), 250); // Try again in 250ms
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES';
+        // Ensure we have the voice, even if we had to wait.
+        if (!this.spanishVoice) this.getSpanishVoice();
+        if (this.spanishVoice) { utterance.voice = this.spanishVoice; }
+        utterance.rate = 0.85; utterance.pitch = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+};
+
+window.addEventListener('DOMContentLoaded', () => controller.init());
+</script>
+</body>
+</html>
