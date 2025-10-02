@@ -1,0 +1,1 @@
+Para que se puedan ver las imágenes, es necesario descargar al archivo "imagenes.zip" y luego extraer. Es importante que la carpeta extraida "imagenes" y "ProgramaAdultoMayor.html" estén en el mismo directorio.
